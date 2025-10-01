@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">News App</string>
+    <string name="for_you">For You</string>
+    <string name="headlines">Headlines</string>
+    <string name="search">Search</string>
+    <string name="source_name">The Times of India</string>
+    <string name="news_headline">News Headline</string>
+    <string name="news_description">News description</string>
+    <string name="read_full">Read full article</string>
+    <string name="account">Account</string>
+    <string name="favorites">Favorites</string>
+    <string name="saved">Saved</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="no_article">No Saved Article</string>
+
+</resources>

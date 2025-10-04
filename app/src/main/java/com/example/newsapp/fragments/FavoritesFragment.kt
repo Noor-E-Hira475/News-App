@@ -26,22 +26,32 @@ class FavoritesFragment : Fragment() {
     private lateinit var adapter: HeadlinesAdapter
     private lateinit var dao: ArticleDAO
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         _binding = FragmentFavoritesBinding.inflate(inflater, container, false)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        dao = ArticleDAO(DBManager(requireContext()))
+        dao = ArticleDAO(
+            dbManager = DBManager(requireContext()),
+            context = requireContext()
+        )
         setupRecycler()
         loadFavorites()
     }
 
     private fun setupRecycler() {
-        adapter = HeadlinesAdapter(emptyList(),
-            onSaveToggle = { item -> handleSaveToggleFromDb(item) },
-            onFavToggle = { item -> handleFavToggleFromDb(item) }
+        adapter = HeadlinesAdapter(
+            emptyList(),
+            onSaveToggle = { }, // Save button hidden here
+            onFavToggle = { item -> handleFavToggleFromDb(item) },
+            showSaveButton = false,
+            showFavButton = true
         )
         binding.recyclerFavorites.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerFavorites.adapter = adapter
@@ -49,7 +59,7 @@ class FavoritesFragment : Fragment() {
 
     private fun loadFavorites() {
         lifecycleScope.launch(Dispatchers.IO) {
-            val dbArticles: List<Article> = dao.getAllArticles().filter { it.isFavorite == 1 }
+            val dbArticles: List<Article> = dao.getFavoriteArticles()
             val display = dbArticles.map { it.toArticleItem() }
             withContext(Dispatchers.Main) {
                 adapter.updateData(display)
@@ -57,27 +67,14 @@ class FavoritesFragment : Fragment() {
         }
     }
 
-    private fun handleSaveToggleFromDb(item: ArticleItem) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            if (item.isSaved == 0) {
-                dao.deleteArticleByUrl(item.url)
-                loadFavorites()
-            } else {
-                // update if needed
-            }
-        }
-    }
-
     private fun handleFavToggleFromDb(item: ArticleItem) {
         lifecycleScope.launch(Dispatchers.IO) {
-            if (item.isFavorite == 0) {
-                // unfavorite -> delete or update
-                dao.deleteArticleByUrl(item.url)
-                loadFavorites()
-            } else {
-                // mark favorite (insert/update)
-                dao.insertArticle(item.title, item.url, item.imageUrl, item.isSaved, 1)
-                loadFavorites()
+            // Update DB: mark as not favorite
+            dao.updateArticleFlags(item.url, isFavorite = 0)
+
+            // Remove from RecyclerView immediately
+            withContext(Dispatchers.Main) {
+                adapter.removeItemByUrl(item.url)
             }
         }
     }

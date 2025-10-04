@@ -2,6 +2,7 @@ package com.example.newsapp.adapters
 
 import android.content.Intent
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
@@ -12,10 +13,14 @@ import com.example.newsapp.databinding.ItemHeadlineBinding
 import com.example.newsapp.models.ArticleItem
 
 class HeadlinesAdapter(
-    private var items: List<ArticleItem>,
+    items: List<ArticleItem>,
     private val onSaveToggle: (ArticleItem) -> Unit,
-    private val onFavToggle: (ArticleItem) -> Unit
+    private val onFavToggle: (ArticleItem) -> Unit,
+    private val showSaveButton: Boolean = true,
+    private val showFavButton: Boolean = true
 ) : RecyclerView.Adapter<HeadlinesAdapter.HeadlineViewHolder>() {
+
+    private var items: MutableList<ArticleItem> = items.toMutableList()
 
     inner class HeadlineViewHolder(val binding: ItemHeadlineBinding) :
         RecyclerView.ViewHolder(binding.root)
@@ -31,15 +36,16 @@ class HeadlinesAdapter(
         val item = items[position]
         val b = holder.binding
 
+        // ---------- Title ----------
         b.tvHeadline.text = item.title
 
-        // Load image: if imageUrl looks like a file path, Glide will load it too.
+        // ---------- Image ----------
         Glide.with(b.imgNews.context)
             .load(item.imageUrl)
-            .placeholder(R.drawable.placeholder) // add placeholder drawable
+            .placeholder(R.drawable.placeholder)
             .into(b.imgNews)
 
-        // Open article URL in browser on item click
+        // ---------- Open in Browser ----------
         holder.itemView.setOnClickListener {
             if (item.url.isNotEmpty()) {
                 val intent = Intent(Intent.ACTION_VIEW, item.url.toUri())
@@ -47,39 +53,75 @@ class HeadlinesAdapter(
             }
         }
 
-        // Set icon colors according to state
-        setSaveIconColor(b, item.isSaved == 1)
-        setFavIconColor(b, item.isFavorite == 1)
-
-        // Save toggle: adapter updates UI & state and notifies fragment via callback
-        b.btnSave.setOnClickListener {
-            item.isSaved = if (item.isSaved == 1) 0 else 1
+        // ---------- Save button ----------
+        if (showSaveButton) {
+            b.btnSave.visibility = View.VISIBLE
             setSaveIconColor(b, item.isSaved == 1)
-            onSaveToggle(item)
+
+            b.btnSave.setOnClickListener {
+                // Toggle locally
+                item.isSaved = if (item.isSaved == 1) 0 else 1
+                setSaveIconColor(b, item.isSaved == 1)
+                // Callback to fragment (to update DB)
+                onSaveToggle(item)
+            }
+        } else {
+            b.btnSave.visibility = View.GONE
         }
 
-        // Favorite toggle
-        b.btnFavorite.setOnClickListener {
-            item.isFavorite = if (item.isFavorite == 1) 0 else 1
+        // ---------- Favorite button ----------
+        if (showFavButton) {
+            b.btnFavorite.visibility = View.VISIBLE
             setFavIconColor(b, item.isFavorite == 1)
-            onFavToggle(item)
+
+            b.btnFavorite.setOnClickListener {
+                // Toggle locally
+                item.isFavorite = if (item.isFavorite == 1) 0 else 1
+                setFavIconColor(b, item.isFavorite == 1)
+                // Callback to fragment (to update DB/remove if needed)
+                onFavToggle(item)
+            }
+        } else {
+            b.btnFavorite.visibility = View.GONE
         }
     }
 
     private fun setSaveIconColor(b: ItemHeadlineBinding, isSaved: Boolean) {
-        val color = if (isSaved) R.color.green else android.R.color.white
-        b.btnSave.setColorFilter(ContextCompat.getColor(b.root.context, color))
+        val colorRes = if (isSaved) R.color.green else android.R.color.white
+        b.btnSave.setColorFilter(ContextCompat.getColor(b.root.context, colorRes))
     }
 
     private fun setFavIconColor(b: ItemHeadlineBinding, isFav: Boolean) {
-        val color = if (isFav) R.color.green else android.R.color.white
-        b.btnFavorite.setColorFilter(ContextCompat.getColor(b.root.context, color))
+        val colorRes = if (isFav) R.color.green else android.R.color.white
+        b.btnFavorite.setColorFilter(ContextCompat.getColor(b.root.context, colorRes))
     }
 
     override fun getItemCount(): Int = items.size
 
+    // ---------- Utility Functions ----------
     fun updateData(newItems: List<ArticleItem>) {
-        items = newItems
+        items = newItems.toMutableList()
         notifyDataSetChanged()
     }
+
+    fun removeItemByUrl(url: String) {
+        val index = items.indexOfFirst { it.url == url }
+        if (index != -1) {
+            items.removeAt(index)
+            notifyItemRemoved(index)
+        }
+    }
+
+    fun removeItem(item: ArticleItem) {
+        removeItemByUrl(item.url)
+    }
+
+    fun updateItem(updated: ArticleItem) {
+        val index = items.indexOfFirst { it.url == updated.url }
+        if (index != -1) {
+            items[index] = updated
+            notifyItemChanged(index)
+        }
+    }
+
 }

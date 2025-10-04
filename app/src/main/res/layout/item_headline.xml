@@ -16,7 +16,8 @@
         android:id="@+id/imgNews"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/black" />
+        android:background="@color/black"
+        android:layout_marginEnd="2dp"/>
 
         <LinearLayout
             android:id="@+id/actionButtons"
@@ -32,16 +33,16 @@
 
         <ImageView
             android:id="@+id/btnFavorite"
-            android:layout_width="23dp"
-            android:layout_height="23dp"
+            android:layout_width="13dp"
+            android:layout_height="13dp"
             android:src="@drawable/ic_favorite"
             app:tint="@color/white"
             android:layout_marginEnd="6dp"/>
 
         <ImageView
             android:id="@+id/btnSave"
-            android:layout_width="23dp"
-            android:layout_height="23dp"
+            android:layout_width="13dp"
+            android:layout_height="13dp"
             android:layout_marginEnd="2dp"
             android:src="@drawable/ic_save"
             app:tint="@color/white" />

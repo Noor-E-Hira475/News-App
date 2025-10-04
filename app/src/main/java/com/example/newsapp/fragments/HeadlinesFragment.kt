@@ -57,6 +57,7 @@ class HeadlinesFragment : Fragment() {
         )
 
         setupRecyclerView()
+        viewModel.fetchHeadlines()
         observeHeadlines()
     }
 
@@ -78,6 +79,7 @@ class HeadlinesFragment : Fragment() {
                     is ResultState.Loading -> {
                         binding.progressBar.visibility = View.VISIBLE
                         binding.errorText.visibility = View.GONE
+                        adapter.updateData(emptyList())
                     }
                     is ResultState.Success -> {
                         binding.progressBar.visibility = View.GONE
@@ -89,8 +91,10 @@ class HeadlinesFragment : Fragment() {
                     }
                     is ResultState.Error -> {
                         binding.progressBar.visibility = View.GONE
-                        binding.errorText.text = state.message
-                        binding.errorText.visibility = View.VISIBLE
+                        binding.errorText.apply {
+                            visibility = View.VISIBLE
+                            text = state.message
+                        }
                     }
                     else -> Unit
                 }

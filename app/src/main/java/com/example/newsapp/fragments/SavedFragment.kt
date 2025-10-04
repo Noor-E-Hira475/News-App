@@ -26,7 +26,10 @@ class SavedFragment : Fragment() {
     private lateinit var adapter: HeadlinesAdapter
     private lateinit var dao: ArticleDAO
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         _binding = FragmentSavedBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -42,9 +45,12 @@ class SavedFragment : Fragment() {
     }
 
     private fun setupRecycler() {
-        adapter = HeadlinesAdapter(emptyList(),
+        adapter = HeadlinesAdapter(
+            emptyList(),
             onSaveToggle = { item -> handleSaveToggleFromDb(item) },
-            onFavToggle = { item -> handleFavToggleFromDb(item) }
+            onFavToggle = { item -> handleFavToggleFromDb(item) },
+            showSaveButton = true,   // show Save button in this fragment
+            showFavButton = false    // hide Favorite button here
         )
         binding.recyclerSaved.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerSaved.adapter = adapter
@@ -52,7 +58,7 @@ class SavedFragment : Fragment() {
 
     private fun loadSaved() {
         lifecycleScope.launch(Dispatchers.IO) {
-            val dbArticles: List<Article> = dao.getAllArticles().filter { it.isSaved == 1 }
+            val dbArticles: List<Article> = dao.getSavedArticles()
             val display = dbArticles.map { it.toArticleItem() }
             withContext(Dispatchers.Main) {
                 adapter.updateData(display)
@@ -62,31 +68,30 @@ class SavedFragment : Fragment() {
 
     private fun handleSaveToggleFromDb(item: ArticleItem) {
         lifecycleScope.launch(Dispatchers.IO) {
+            // DB update with new state (adapter already toggled item.isSaved)
+            dao.updateArticleFlags(item.url, isSaved = item.isSaved)
+
+            // If now un-saved → remove from UI
             if (item.isSaved == 0) {
-                // was saved and user toggled to unsave
-                dao.deleteArticleByUrl(item.url)
-                // reload list
-                loadSaved()
-            } else {
-                // unlikely: toggled "save" on an already-saved item, maybe update flags
-                // Do nothing or update flags if needed
+                withContext(Dispatchers.Main) {
+                    adapter.removeItemByUrl(item.url)
+                }
             }
         }
     }
 
     private fun handleFavToggleFromDb(item: ArticleItem) {
         lifecycleScope.launch(Dispatchers.IO) {
-            if (item.isFavorite == 1) {
-                // mark favorite: update DB row (simple approach: insert or update)
-                dao.insertArticle(item.title, item.url, item.imageUrl, item.isSaved, 1)
-                loadSaved()
-            } else {
-                // remove favorite: update row or delete; here we delete by url if you want to remove entirely
-                dao.deleteArticleByUrl(item.url)
-                loadSaved()
+            // DB update (adapter already toggled item.isFavorite)
+            dao.updateArticleFlags(item.url, isFavorite = item.isFavorite)
+
+            // Just refresh UI to reflect icon color change
+            withContext(Dispatchers.Main) {
+                adapter.updateItem(item)
             }
         }
     }
+
 
     override fun onDestroyView() {
         super.onDestroyView()

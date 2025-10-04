@@ -26,4 +26,18 @@
         android:label="@string/search"
         tools:layout="@layout/fragment_search" />
 
+<!--    Saved Fragments-->
+    <fragment
+        android:id="@+id/nav_saved"
+        android:name="com.example.newsapp.fragments.SavedFragment"
+        android:label="Saved"
+        tools:layout="@layout/fragment_saved" />
+
+    <!-- Favorite Articles -->
+    <fragment
+        android:id="@+id/nav_favorites"
+        android:name="com.example.newsapp.fragments.FavoritesFragment"
+        android:label="Favorites"
+        tools:layout="@layout/fragment_favorites" />
+
 </navigation>
